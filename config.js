@@ -72,5 +72,8 @@ window.CONFIG = {
     eventBlack: "#222326",
     eventSilver: "#dde2e6",
     forumGold: "#d6a94f",
+    uiViolet: "#8f7cff",
+    uiBlue: "#4f8bff",
+    uiPink: "#ff5fb8",
   },
 };
