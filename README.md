@@ -14,3 +14,4 @@ La presentacion puede abrirse con doble clic en `index.html`.
 - Selector `ES` / `PT` en la ayuda: cambiar idioma.
 
 Para editar textos, QR y parametros visuales, revisa `GUIA_CAMBIOS_RAPIDOS.md`.
+.
