@@ -68,26 +68,50 @@ class VisualSystem {
       drift: seededUnit(i + 88) * TAU,
     }));
 
-    // Relevo generacional: dos generaciones que construyen el mismo castillo.
+    // Relevo generacional: dos generaciones que comparten las mismas 138 partículas
+    // a lo largo de todas las diapositivas (antigua = roja, nueva = azul).
     this.oldCount = Math.round(CONFIG.particleCount * 0.68);
     this.particles.forEach((p, i) => {
       p.generation = i < this.oldCount ? "old" : "new";
       p.buildOrder = i < this.oldCount ? i : i - this.oldCount;
     });
+
+    // --- Slide 1 "genesis": castillo construido por la generación antigua,
+    // rematado por la nueva. ---
     this.genesisTiming = {
-      oldFastEnd: 3.4, // construcción rápida inicial (generación antigua)
-      oldSlowEnd: 42, // luego se vuelve extremadamente lenta (casi un estancamiento)
-      newArriveStart: 9, // momento en que empieza a llegar la nueva generación
-      newArriveSpan: 8, // se escalonan sus llegadas a lo largo de esta ventana
-      newEachDuration: 3, // cuánto tarda cada partícula nueva en llegar a su sitio
+      oldFastEnd: 3.4,
+      oldSlowEnd: 42,
+      newArriveStart: 9,
+      newArriveSpan: 8,
+      newEachDuration: 3,
     };
     this.buildCastleBlueprint();
+
+    // --- Slide 2 "ingreso": la generación nueva entra en fila, se forma en un
+    // arreglo cuadrado y vuelve a salir, representando el entrar/salir del evento. ---
+    this.ingresoTiming = {
+      enterSpan: 7,
+      enterDuration: 2.4,
+      holdSpan: 6,
+      exitSpan: 7,
+      exitDuration: 2.4,
+      cycle: 7 + 6 + 7 + 2,
+    };
+    this.buildIngresoGrid();
+
+    // Foto circular de borde desvanecido que puede ubicarse en distintos
+    // puntos del mapa según la diapositiva.
+    this.photoConfig = null;
+    this.photoSrc = null;
+    this.photoImg = null;
+    this.photoBuffer = null;
+    this.photoBufferCtx = null;
 
     this.resize();
     window.addEventListener("resize", () => this.resize());
   }
 
-  // --- Plano del castillo (espacio normalizado 0..1, y=1 es el suelo) ---
+  // === Slide 1: plano del castillo (espacio normalizado 0..1, y=1 es el suelo) ===
   isOldCastleMask(x, y) {
     const inLeftTower = x >= 0.06 && x <= 0.22 && y >= 0.4 && y < 0.94;
     const inRightTower = x >= 0.78 && x <= 0.94 && y >= 0.4 && y < 0.94;
@@ -177,6 +201,122 @@ class VisualSystem {
     return { x: originX + nx * castleW, y: originY + ny * castleH };
   }
 
+  // === Slide 2: arreglo cuadrado de ingreso ===
+  buildIngresoGrid() {
+    const newCount = this.particles.length - this.oldCount;
+    const cols = Math.max(1, Math.round(Math.sqrt(newCount)));
+    const rows = Math.ceil(newCount / cols);
+    // Se llenan primero las filas más cercanas a la puerta de entrada (abajo)
+    // y por último las del fondo, para que la fila siga un recorrido natural.
+    const rowOrder = [];
+    for (let r = 0; r < rows; r += 1) rowOrder.push(r);
+    const itemsPerRow = rowOrder.map((r) => Math.min(cols, newCount - r * cols));
+    rowOrder.sort((a, b) => b - a);
+    const slots = [];
+    for (const r of rowOrder) {
+      const itemsInRow = itemsPerRow[r];
+      const rowOffset = (cols - itemsInRow) / 2;
+      for (let c = 0; c < itemsInRow; c += 1) {
+        const colPos = c + rowOffset;
+        slots.push({ x: (colPos + 0.5) / cols, y: (r + 0.5) / rows });
+      }
+    }
+    this.ingresoCols = cols;
+    this.ingresoRows = rows;
+    for (let i = this.oldCount; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.ingresoSlot = slots[p.buildOrder];
+    }
+  }
+
+  ingresoLocalToCanvas(nx, ny) {
+    const base = Math.min(this.width, this.height);
+    const arrayW = base * 0.46;
+    const arrayH = base * 0.4;
+    const cx = this.width * 0.5;
+    const cy = this.height * 0.48;
+    const originX = cx - arrayW / 2;
+    const originY = cy - arrayH / 2;
+    return { x: originX + nx * arrayW, y: originY + ny * arrayH };
+  }
+
+  getArrayCenter() {
+    return this.ingresoLocalToCanvas(0.5, 0.5);
+  }
+
+  // === Foto circular con borde desvanecido ===
+  ensurePhotoBuffer() {
+    if (!this.photoBuffer) {
+      this.photoBuffer = document.createElement("canvas");
+      this.photoBufferCtx = this.photoBuffer.getContext("2d");
+    }
+  }
+
+  loadPhoto(src) {
+    if (this.photoSrc === src) return;
+    this.photoSrc = src;
+    this.photoImg = null;
+    if (!src) return;
+    const img = new Image();
+    img.onload = () => {
+      if (this.photoSrc === src) this.photoImg = img;
+    };
+    img.src = src;
+  }
+
+  drawCircularPhoto(ctx, cx, cy, diameter, opacity = 1) {
+    if (!this.photoImg) return;
+    this.ensurePhotoBuffer();
+    const size = Math.max(2, Math.round(diameter));
+    if (this.photoBuffer.width !== size || this.photoBuffer.height !== size) {
+      this.photoBuffer.width = size;
+      this.photoBuffer.height = size;
+    }
+    const bctx = this.photoBufferCtx;
+    bctx.clearRect(0, 0, size, size);
+    const img = this.photoImg;
+    const scale = Math.max(size / img.width, size / img.height);
+    const dw = img.width * scale;
+    const dh = img.height * scale;
+    bctx.save();
+    bctx.globalCompositeOperation = "source-over";
+    bctx.drawImage(img, (size - dw) / 2, (size - dh) / 2, dw, dh);
+    bctx.globalCompositeOperation = "destination-in";
+    const grad = bctx.createRadialGradient(size / 2, size / 2, size * 0.26, size / 2, size / 2, size * 0.5);
+    grad.addColorStop(0, "rgba(0,0,0,1)");
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    bctx.fillStyle = grad;
+    bctx.beginPath();
+    bctx.arc(size / 2, size / 2, size / 2, 0, TAU);
+    bctx.fill();
+    bctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.drawImage(this.photoBuffer, cx - size / 2, cy - size / 2);
+    ctx.restore();
+  }
+
+  drawMomentPhoto(ctx) {
+    if (!this.photoConfig || !this.photoImg) return;
+    const base = Math.min(this.width, this.height);
+    const diameter = base * (this.photoConfig.diameter || 0.3);
+    let cx;
+    let cy;
+    if (this.photoConfig.anchor === "array-center") {
+      const center = this.getArrayCenter();
+      cx = center.x;
+      cy = center.y;
+    } else if (this.photoConfig.anchor && typeof this.photoConfig.anchor === "object") {
+      cx = this.width * this.photoConfig.anchor.x;
+      cy = this.height * this.photoConfig.anchor.y;
+    } else {
+      cx = this.width * 0.5;
+      cy = this.height * 0.5;
+    }
+    this.drawCircularPhoto(ctx, cx, cy, diameter, 0.94);
+  }
+
   resize() {
     const rect = this.canvas.getBoundingClientRect();
     this.dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -210,6 +350,15 @@ class VisualSystem {
         p.py = target.y;
       }
     }
+
+    const assetCfg = CONFIG.assets.byMoment?.[moment.id];
+    const resolvedAsset = assetCfg === false ? null : assetCfg || moment.asset;
+    if (resolvedAsset?.type === "image" && resolvedAsset.placement === "circle" && resolvedAsset.src) {
+      this.photoConfig = { anchor: resolvedAsset.anchor || "center", diameter: resolvedAsset.diameter || 0.32 };
+      this.loadPhoto(resolvedAsset.src);
+    } else {
+      this.photoConfig = null;
+    }
   }
 
   update() {
@@ -233,6 +382,7 @@ class VisualSystem {
     const hasBackgroundAsset = this.hasBackgroundAsset();
     ctx.clearRect(0, 0, this.width, this.height);
     this.drawBackground(ctx, hasBackgroundAsset);
+    this.drawMomentPhoto(ctx);
     this.drawSpatialMotifs(ctx);
     this.drawArchive(ctx);
     this.drawArchitecture(ctx);
@@ -436,6 +586,10 @@ class VisualSystem {
       return;
     }
 
+    if (state === "ingreso") {
+      return;
+    }
+
     if (state === "latent") {
       this.drawLatentPotential(ctx);
       return;
@@ -525,7 +679,6 @@ class VisualSystem {
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
 
-    // Plano fantasma del castillo completo: insinúa la meta antes de construirla.
     ctx.fillStyle = rgba(CONFIG.palette.eventSilver, 0.03);
     for (const p of this.particles) {
       if (!p.castle) continue;
@@ -535,7 +688,6 @@ class VisualSystem {
       ctx.fill();
     }
 
-    // Resplandor cálido de obra en el suelo.
     const glow = ctx.createLinearGradient(0, groundY - base * 0.03, 0, groundY + base * 0.06);
     glow.addColorStop(0, "rgba(0,0,0,0)");
     glow.addColorStop(0.5, rgba(this.colors[2] || this.colors[0], 0.07));
@@ -571,6 +723,39 @@ class VisualSystem {
         if (alpha < 0.015) continue;
         ctx.strokeStyle = rgba(color, alpha);
         ctx.lineWidth = sameOld || sameNew ? 1 : 1.5;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  drawIngresoConnections(ctx) {
+    const base = Math.min(this.width, this.height);
+    const maxDist = base * 0.07;
+    const boost = this.hasBackgroundAsset() ? 0.72 : 1;
+
+    ctx.save();
+    ctx.lineCap = "round";
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const a = this.particles[i];
+      const aProgress = a.buildProgress ?? 0;
+      if (aProgress < 0.2) continue;
+      for (let j = i + 1; j < this.particles.length; j += 2) {
+        const b = this.particles[j];
+        if (a.generation !== b.generation) continue;
+        const bProgress = b.buildProgress ?? 0;
+        if (bProgress < 0.2) continue;
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxDist) continue;
+        const strength = 1 - dist / maxDist;
+        const color = a.generation === "old" ? CONFIG.palette.eventRed : CONFIG.palette.eventCyan;
+        const alpha = strength * 0.34 * boost;
+        if (alpha < 0.015) continue;
+        ctx.strokeStyle = rgba(color, alpha);
+        ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(a.px, a.py);
         ctx.lineTo(b.px, b.py);
@@ -1124,6 +1309,72 @@ class VisualSystem {
         continue;
       }
 
+      if (state === "ingreso" && p.generation === "old") {
+        const center = this.getArrayCenter();
+        const base = Math.min(this.width, this.height);
+        const ringAngle = seededUnit(seed) * TAU + this.time * 0.02 * (p.lane % 2 === 0 ? 1 : -1);
+        const ringRadius = base * (0.34 + seededUnit(seed + 5) * 0.14);
+        const sway = Math.sin(this.time * 0.5 + p.drift) * base * 0.01;
+        const tx = center.x + Math.cos(ringAngle) * ringRadius + sway;
+        const ty = center.y + Math.sin(ringAngle) * ringRadius * 0.46 + sway * 0.5;
+        p.px = lerp(p.px || tx, tx, 0.03);
+        p.py = lerp(p.py || ty, ty, 0.03);
+        p.buildProgress = 1;
+        continue;
+      }
+
+      if (state === "ingreso" && p.generation === "new") {
+        const newCount = this.particles.length - this.oldCount;
+        const groupCount = Math.max(1, newCount - 1);
+        const frac = p.buildOrder / groupCount;
+        const timing = this.ingresoTiming;
+        const cyclePos = this.momentTime % timing.cycle;
+        const slot = this.ingresoLocalToCanvas(p.ingresoSlot.x, p.ingresoSlot.y);
+        const doorway = this.ingresoLocalToCanvas(0.5, 1.22);
+        const enterWindow = Math.max(0.001, timing.enterSpan - timing.enterDuration);
+        const te0 = frac * enterWindow;
+        const te1 = te0 + timing.enterDuration;
+        const holdEnd = timing.enterSpan + timing.holdSpan;
+        const exitWindow = Math.max(0.001, timing.exitSpan - timing.exitDuration);
+        const tx0 = holdEnd + frac * exitWindow;
+        const tx1 = tx0 + timing.exitDuration;
+        const enterStaging = this.ingresoLocalToCanvas(0.5 + (seededUnit(seed + 61) - 0.5) * 0.3, 1.55);
+        const exitStaging = this.ingresoLocalToCanvas(0.5 + (seededUnit(seed + 82) - 0.5) * 0.3, 1.55);
+
+        let x;
+        let y;
+        let visible;
+        if (cyclePos < te0) {
+          x = enterStaging.x;
+          y = enterStaging.y;
+          visible = false;
+        } else if (cyclePos < te1) {
+          const ease = smoothstep(te0, te1, cyclePos);
+          x = quadraticPoint(enterStaging.x, doorway.x, slot.x, ease);
+          y = quadraticPoint(enterStaging.y, doorway.y, slot.y, ease);
+          visible = true;
+        } else if (cyclePos < tx0) {
+          x = slot.x;
+          y = slot.y;
+          visible = true;
+        } else if (cyclePos < tx1) {
+          const ease = smoothstep(tx0, tx1, cyclePos);
+          x = quadraticPoint(slot.x, doorway.x, exitStaging.x, ease);
+          y = quadraticPoint(slot.y, doorway.y, exitStaging.y, ease);
+          visible = true;
+        } else {
+          x = exitStaging.x;
+          y = exitStaging.y;
+          visible = false;
+        }
+
+        const jitter = Math.sin(this.time * 1.2 + p.drift) * 1.4;
+        p.px = x + jitter;
+        p.py = y + jitter * 0.5;
+        p.buildProgress = visible ? 1 : 0;
+        continue;
+      }
+
       if (state === "latent") {
         const orbit = seededUnit(seed + 2) * TAU + this.time * (0.008 + p.lane * 0.003);
         const outer = radiusBase * (2.05 + seededUnit(seed + 21) * 1.7);
@@ -1276,6 +1527,10 @@ class VisualSystem {
       this.drawGenesisConnections(ctx);
       return;
     }
+    if (state === "ingreso") {
+      this.drawIngresoConnections(ctx);
+      return;
+    }
     if (state === "duality") return;
     const isLatent = state === "latent";
     const distanceScale =
@@ -1343,6 +1598,10 @@ class VisualSystem {
     const isOpening = this.current?.state === "opening";
     const isDuality = this.current?.state === "duality";
     const isGenesis = this.current?.state === "genesis";
+    const isIngreso = this.current?.state === "ingreso";
+
+    ctx.save();
+    ctx.shadowBlur = 9;
 
     if (isGenesis) {
       for (const p of this.particles) {
@@ -1351,13 +1610,32 @@ class VisualSystem {
         const color = p.generation === "old" ? CONFIG.palette.eventRed : CONFIG.palette.eventCyan;
         const settle = smoothstep(0.82, 1, progress);
         const pulse = 0.62 + Math.sin(this.time * 1.35 + p.drift) * 0.16 * (0.4 + progress * 0.6) + settle * 0.14;
-        const alpha = Math.min(0.92, (0.16 + progress * 0.66) * alphaBoost * pulse);
+        const alpha = Math.min(0.96, (0.22 + progress * 0.72) * alphaBoost * pulse);
         if (alpha < 0.012) continue;
+        ctx.shadowColor = rgba(color, Math.min(1, alpha * 1.5));
         ctx.fillStyle = rgba(color, alpha);
         ctx.beginPath();
-        ctx.arc(p.px, p.py, p.size * (0.5 + progress * 0.62) * (1 + settle * 0.3) * sizeBoost, 0, TAU);
+        ctx.arc(p.px, p.py, p.size * (0.55 + progress * 0.68) * (1 + settle * 0.32) * sizeBoost, 0, TAU);
         ctx.fill();
       }
+      ctx.restore();
+      return;
+    }
+
+    if (isIngreso) {
+      for (const p of this.particles) {
+        const progress = p.buildProgress ?? 0;
+        if (progress < 0.01) continue;
+        const color = p.generation === "old" ? CONFIG.palette.eventRed : CONFIG.palette.eventCyan;
+        const pulse = 0.72 + Math.sin(this.time * 1.4 + p.drift) * 0.18;
+        const alpha = Math.min(0.96, 0.58 * alphaBoost * pulse);
+        ctx.shadowColor = rgba(color, Math.min(1, alpha * 1.5));
+        ctx.fillStyle = rgba(color, alpha);
+        ctx.beginPath();
+        ctx.arc(p.px, p.py, p.size * 1.08 * sizeBoost, 0, TAU);
+        ctx.fill();
+      }
+      ctx.restore();
       return;
     }
 
@@ -1392,14 +1670,15 @@ class VisualSystem {
                 : 0.82 + Math.sin(this.time * 0.48 + p.drift) * 0.09
           : 0.72 + Math.sin(this.time * 1.8 + p.drift) * 0.28;
       const alpha = Math.min(
-        0.86,
-        (0.42 + this.params.intensity * 0.38) *
+        0.94,
+        (0.52 + this.params.intensity * 0.42) *
           alphaBoost *
           (isLatent ? 0.86 : 1) *
           openingPresence *
           (isDuality && youngDual ? 1.14 : isDuality && hybridDual ? 1.12 : isDuality ? 0.82 : 1),
       );
       if (alpha < 0.01) continue;
+      ctx.shadowColor = rgba(color, Math.min(1, alpha * 1.4));
       ctx.fillStyle = rgba(color, alpha);
       ctx.beginPath();
       ctx.arc(
@@ -1407,7 +1686,7 @@ class VisualSystem {
         p.py,
         p.size *
           pulse *
-          (1 + this.params.intensity * 0.52) *
+          (1 + this.params.intensity * 0.62) *
           sizeBoost *
           (isLatent ? 0.86 : 1) *
           (isDuality && youngDual ? 1.34 : isDuality && hybridDual ? 1.32 : isDuality ? 1.08 : 1),
@@ -1416,10 +1695,11 @@ class VisualSystem {
       );
       ctx.fill();
     }
+    ctx.restore();
   }
 
   drawSpiral(ctx) {
-    if (this.current?.state === "genesis") return;
+    if (this.current?.state === "genesis" || this.current?.state === "ingreso") return;
     const cx = this.width * 0.66;
     const cy = this.height * 0.47;
     const isOpening = this.current?.state === "opening";

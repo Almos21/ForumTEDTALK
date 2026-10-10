@@ -13,7 +13,9 @@ window.CONFIG = {
         type: "image",
         src: "./assets/slide-02-grados.webp",
         alt: "Ceremonia de grados en Forum UPB",
-        placement: "background",
+        placement: "circle",
+        anchor: "array-center",
+        diameter: 0.36,
       },
       "academia-industria-ciudad": {
         type: "image",

@@ -131,6 +131,21 @@ button {
   width: min(68%, 900px);
 }
 
+/* Slide 2: el arreglo + la foto circular ocupan el centro, así que el texto
+   sube arriba-izquierda y los logos bajan abajo — una disposición distinta
+   a la del resto de diapositivas. */
+.stage[data-moment="auditorio-grados"] .copy-layer {
+  top: clamp(56px, 10vh, 108px);
+  bottom: auto;
+  left: clamp(36px, 7vw, 108px);
+  width: min(40%, 540px);
+}
+
+.stage[data-moment="auditorio-grados"] .brand-lockup {
+  top: auto;
+  bottom: clamp(14px, 2.4vh, 28px);
+}
+
 .stage.is-title-moment .eyebrow {
   display: block;
   max-width: 100%;

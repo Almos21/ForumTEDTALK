@@ -246,7 +246,7 @@ function assetFor(moment) {
 function setAsset(moment) {
   window.clearTimeout(assetClearTimer);
   const asset = assetFor(moment);
-  if (asset?.type === "image" && asset.src) {
+  if (asset?.type === "image" && asset.src && asset.placement !== "circle") {
     const isBackground = asset.placement === "background";
     const changeImage = assetImage.getAttribute("src") !== asset.src;
     if (changeImage) {
@@ -282,7 +282,7 @@ function setMoment(index) {
   const moment = moments[activeIndex];
   const copy = copyFor(moment);
   const asset = assetFor(moment);
-  const hasImageAsset = asset?.type === "image" && asset.src;
+  const hasImageAsset = asset?.type === "image" && asset.src && asset.placement !== "circle";
   const hasBackgroundAsset = hasImageAsset && asset.placement === "background";
   window.clearTimeout(transitionTimer);
   qrLayer.classList.toggle("is-visible", moment.state === "qr");
