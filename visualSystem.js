@@ -87,15 +87,17 @@ class VisualSystem {
     };
     this.buildCastleBlueprint();
 
-    // --- Slide 2 "ingreso": la generación nueva entra en fila, se forma en un
-    // arreglo cuadrado y vuelve a salir, representando el entrar/salir del evento. ---
+    // --- Slide 2 "ingreso": la generación nueva se forma en un arreglo
+    // cuadrado entrando horizontalmente fila por fila; luego, de a una,
+    // las partículas salen, recorren una fila exterior y vuelven a entrar
+    // por el lado opuesto, siempre en movimiento horizontal. ---
     this.ingresoTiming = {
-      enterSpan: 7,
-      enterDuration: 2.4,
-      holdSpan: 6,
-      exitSpan: 7,
-      exitDuration: 2.4,
-      cycle: 7 + 6 + 7 + 2,
+      formDuration: 5.6, // ventana en la que se arma la figura completa
+      formRowStagger: 0.5, // retraso entre el inicio de cada fila al formarse
+      formSlide: 1.8, // duración del deslizamiento de cada fila al formarse
+      transitionDuration: 1.0, // duración de cada salida/entrada individual
+      restDuration: 1.6, // tiempo recorriendo la fila exterior
+      cycleGap: 1.1, // desfase entre el ciclo de una partícula y la siguiente
     };
     this.buildIngresoGrid();
 
@@ -206,19 +208,17 @@ class VisualSystem {
     const newCount = this.particles.length - this.oldCount;
     const cols = Math.max(1, Math.round(Math.sqrt(newCount)));
     const rows = Math.ceil(newCount / cols);
-    // Se llenan primero las filas más cercanas a la puerta de entrada (abajo)
-    // y por último las del fondo, para que la fila siga un recorrido natural.
-    const rowOrder = [];
-    for (let r = 0; r < rows; r += 1) rowOrder.push(r);
-    const itemsPerRow = rowOrder.map((r) => Math.min(cols, newCount - r * cols));
-    rowOrder.sort((a, b) => b - a);
     const slots = [];
-    for (const r of rowOrder) {
-      const itemsInRow = itemsPerRow[r];
+    for (let r = 0; r < rows; r += 1) {
+      const itemsInRow = Math.min(cols, newCount - r * cols);
       const rowOffset = (cols - itemsInRow) / 2;
+      // Cada fila es un carril horizontal de un solo sentido: entra por un
+      // lado y sale por el opuesto, alternando entre filas para variedad.
+      const exitSide = r % 2 === 0 ? "right" : "left";
+      const entrySide = exitSide === "right" ? "left" : "right";
       for (let c = 0; c < itemsInRow; c += 1) {
         const colPos = c + rowOffset;
-        slots.push({ x: (colPos + 0.5) / cols, y: (r + 0.5) / rows });
+        slots.push({ x: (colPos + 0.5) / cols, y: (r + 0.5) / rows, row: r, exitSide, entrySide });
       }
     }
     this.ingresoCols = cols;
@@ -242,6 +242,22 @@ class VisualSystem {
 
   getArrayCenter() {
     return this.ingresoLocalToCanvas(0.5, 0.5);
+  }
+
+  // Puntos de la "fila exterior": justo afuera del cuadro a cada lado de la
+  // fila, y un punto de control para arquear el tramo que las une por fuera
+  // del arreglo (arriba si la fila está en la mitad superior, abajo si no).
+  getIngresoStage(slot) {
+    const base = Math.min(this.width, this.height);
+    const home = this.ingresoLocalToCanvas(slot.x, slot.y);
+    const exitLocalX = slot.exitSide === "right" ? 1.14 : -0.14;
+    const entryLocalX = slot.entrySide === "right" ? 1.14 : -0.14;
+    const queueOut = this.ingresoLocalToCanvas(exitLocalX, slot.y);
+    const queueIn = this.ingresoLocalToCanvas(entryLocalX, slot.y);
+    const verticalDir = slot.row % 2 === 0 ? -1 : 1;
+    const arcControlX = (queueOut.x + queueIn.x) / 2;
+    const arcControlY = home.y + verticalDir * base * 0.2;
+    return { home, queueOut, queueIn, arcControlX, arcControlY };
   }
 
   // === Foto circular con borde desvanecido ===
@@ -1324,54 +1340,59 @@ class VisualSystem {
       }
 
       if (state === "ingreso" && p.generation === "new") {
-        const newCount = this.particles.length - this.oldCount;
-        const groupCount = Math.max(1, newCount - 1);
-        const frac = p.buildOrder / groupCount;
         const timing = this.ingresoTiming;
-        const cyclePos = this.momentTime % timing.cycle;
-        const slot = this.ingresoLocalToCanvas(p.ingresoSlot.x, p.ingresoSlot.y);
-        const doorway = this.ingresoLocalToCanvas(0.5, 1.22);
-        const enterWindow = Math.max(0.001, timing.enterSpan - timing.enterDuration);
-        const te0 = frac * enterWindow;
-        const te1 = te0 + timing.enterDuration;
-        const holdEnd = timing.enterSpan + timing.holdSpan;
-        const exitWindow = Math.max(0.001, timing.exitSpan - timing.exitDuration);
-        const tx0 = holdEnd + frac * exitWindow;
-        const tx1 = tx0 + timing.exitDuration;
-        const enterStaging = this.ingresoLocalToCanvas(0.5 + (seededUnit(seed + 61) - 0.5) * 0.3, 1.55);
-        const exitStaging = this.ingresoLocalToCanvas(0.5 + (seededUnit(seed + 82) - 0.5) * 0.3, 1.55);
+        const slot = p.ingresoSlot;
+        const stage = this.getIngresoStage(slot);
+        const newCount = this.particles.length - this.oldCount;
+        const bob = Math.sin(this.time * 1.4 + p.drift) * 1.2;
 
-        let x;
-        let y;
-        let visible;
-        if (cyclePos < te0) {
-          x = enterStaging.x;
-          y = enterStaging.y;
-          visible = false;
-        } else if (cyclePos < te1) {
-          const ease = smoothstep(te0, te1, cyclePos);
-          x = quadraticPoint(enterStaging.x, doorway.x, slot.x, ease);
-          y = quadraticPoint(enterStaging.y, doorway.y, slot.y, ease);
-          visible = true;
-        } else if (cyclePos < tx0) {
-          x = slot.x;
-          y = slot.y;
-          visible = true;
-        } else if (cyclePos < tx1) {
-          const ease = smoothstep(tx0, tx1, cyclePos);
-          x = quadraticPoint(slot.x, doorway.x, exitStaging.x, ease);
-          y = quadraticPoint(slot.y, doorway.y, exitStaging.y, ease);
-          visible = true;
-        } else {
-          x = exitStaging.x;
-          y = exitStaging.y;
-          visible = false;
+        if (this.momentTime < timing.formDuration) {
+          // Formación inicial: cada fila entra horizontalmente desde su lado
+          // de llegada hasta ocupar su lugar en el arreglo cuadrado.
+          const formLocalStart = slot.row * timing.formRowStagger;
+          const formLocalEnd = formLocalStart + timing.formSlide;
+          const ease = smoothstep(formLocalStart, formLocalEnd, this.momentTime);
+          p.px = lerp(stage.queueIn.x, stage.home.x, ease);
+          p.py = stage.home.y + bob * (1 - ease);
+          p.buildProgress = Math.max(0.12, ease);
+          continue;
         }
 
-        const jitter = Math.sin(this.time * 1.2 + p.drift) * 1.4;
-        p.px = x + jitter;
-        p.py = y + jitter * 0.5;
-        p.buildProgress = visible ? 1 : 0;
+        // Fase continua: una vez armada la figura completa, cada partícula
+        // repite su propio ciclo (desfasado respecto a las demás) de modo
+        // que, de a una, sale del cuadro, recorre una fila exterior por
+        // fuera del arreglo y vuelve a entrar por el lado opuesto — siempre
+        // en línea horizontal respecto a su fila.
+        const cycleLen = newCount * timing.cycleGap;
+        const holdDuration = Math.max(0.8, cycleLen - timing.transitionDuration * 2 - timing.restDuration);
+        const phaseOffset = p.buildOrder * timing.cycleGap;
+        const t2 = this.momentTime - timing.formDuration;
+        const cyclePos = (t2 + phaseOffset) % cycleLen;
+
+        const exitEnd = holdDuration + timing.transitionDuration;
+        const restEnd = exitEnd + timing.restDuration;
+        const enterEnd = restEnd + timing.transitionDuration;
+
+        if (cyclePos < holdDuration) {
+          p.px = stage.home.x;
+          p.py = stage.home.y;
+        } else if (cyclePos < exitEnd) {
+          const ease = smoothstep(holdDuration, exitEnd, cyclePos);
+          p.px = lerp(stage.home.x, stage.queueOut.x, ease);
+          p.py = stage.home.y;
+        } else if (cyclePos < restEnd) {
+          const ease = smoothstep(exitEnd, restEnd, cyclePos);
+          p.px = quadraticPoint(stage.queueOut.x, stage.arcControlX, stage.queueIn.x, ease);
+          p.py = quadraticPoint(stage.queueOut.y, stage.arcControlY, stage.queueIn.y, ease);
+        } else if (cyclePos < enterEnd) {
+          const ease = smoothstep(restEnd, enterEnd, cyclePos);
+          p.px = lerp(stage.queueIn.x, stage.home.x, ease);
+          p.py = stage.home.y;
+        } else {
+          p.px = stage.home.x;
+          p.py = stage.home.y;
+        }
+        p.buildProgress = 1;
         continue;
       }
 
