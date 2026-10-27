@@ -169,23 +169,31 @@ el espacio de la espiral. La espiral acompana, pero no domina la lectura.
 
 ### 4. Academia + Industria + Ciudad
 
-Concepto visual: **tres actores**.
+Concepto visual: **tres fuerzas incompletas conectadas en red**.
 
-El sistema organiza las particulas en tres agrupaciones. Cada grupo tiene color
-y ritmo propios. La espiral funciona como campo comun, no como actor unico.
+El sistema organiza las partículas en tres agrupaciones geométricas bien diferenciadas:
+un cuadrado (Academia, cian), un triángulo (Industria, rojo) y un círculo (Ciudad, magenta).
+Las tres figuras están conectadas entre sí mediante una red viva (hilos dorados y plateados,
+en continuidad con la estética del slide 3). Periódicamente, los grupos se halan entre sí
+con tensión elástica visible pero se mantienen siempre conectados.
 
-Decision: tres campos diferenciados sin fusionarlos todavia.
+Decisión fundamental: las tres figuras están incompletas (al cuadrado le falta el lado derecho,
+al triángulo le falta la base inferior y al círculo le falta un tercio de su arco, todos mirando
+hacia el centro común), transmitiendo que a cada fuerza le falta algo esencial para operar en plenitud.
 
 ### 5. Los eventos nunca fueron el objetivo. El impacto si.
 
-Concepto visual: **consecuencia**.
+Concepto visual: **relevo generacional que completa el ecosistema**.
 
-El momento parte de la logica del momento 4: tres actores. Pero ahora los campos
-se acercan y producen ondas de impacto. El impacto no es ocupacion del espacio;
-es huella, expansion y consecuencia visible.
+Los tres grupos incompletos continúan presentes en sus posiciones. Desde fuera de la vista
+entra un nuevo cúmulo de 44 partículas de alta energía (la nueva generación / el talento joven)
+que converge en el centro del espacio. Una vez reunidas en un núcleo brillante y palpitante,
+las partículas se dispersan hacia los tres grupos y se insertan con precisión en las secciones
+faltantes: completan el cuadrado, cierran la base del triángulo y cierran el círculo completo.
 
-Decision: usar ondas y acercamiento entre campos para mostrar que la relacion
-produce efectos mas alla del evento.
+Decisión: la narrativa visual de los 3 grupos se extiende a lo largo de ambos slides (4 y 5);
+el impacto no es un mero efecto decorativo sino la integración y completitud de las instituciones
+gracias a la llegada y dispersión de la nueva generación.
 
 ### 6. Un evento trae personas. Una comunidad trae transformacion.
 

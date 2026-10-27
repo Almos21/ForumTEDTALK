@@ -901,7 +901,9 @@ h1 {
 
 .stage[data-moment="relevo-generacional"],
 .stage[data-moment="auditorio-grados"],
-.stage[data-moment="universidad-mundo"] {
+.stage[data-moment="universidad-mundo"],
+.stage[data-moment="academia-industria-ciudad"],
+.stage[data-moment="impacto"] {
   --remix-display: "Space Grotesk", "Forum Inter", sans-serif;
   --remix-body: "Sora", "Forum Inter", sans-serif;
   --remix-a: #a78bfa;
@@ -911,7 +913,9 @@ h1 {
 
 .stage[data-moment="relevo-generacional"] .eyebrow,
 .stage[data-moment="auditorio-grados"] .eyebrow,
-.stage[data-moment="universidad-mundo"] .eyebrow {
+.stage[data-moment="universidad-mundo"] .eyebrow,
+.stage[data-moment="academia-industria-ciudad"] .eyebrow,
+.stage[data-moment="impacto"] .eyebrow {
   position: relative;
   padding-left: 24px;
   font-family: var(--remix-body);
@@ -922,7 +926,9 @@ h1 {
 
 .stage[data-moment="relevo-generacional"] .eyebrow::before,
 .stage[data-moment="auditorio-grados"] .eyebrow::before,
-.stage[data-moment="universidad-mundo"] .eyebrow::before {
+.stage[data-moment="universidad-mundo"] .eyebrow::before,
+.stage[data-moment="academia-industria-ciudad"] .eyebrow::before,
+.stage[data-moment="impacto"] .eyebrow::before {
   content: "";
   position: absolute;
   left: 0;
@@ -935,7 +941,9 @@ h1 {
 
 .stage[data-moment="relevo-generacional"] h1,
 .stage[data-moment="auditorio-grados"] h1,
-.stage[data-moment="universidad-mundo"] h1 {
+.stage[data-moment="universidad-mundo"] h1,
+.stage[data-moment="academia-industria-ciudad"] h1,
+.stage[data-moment="impacto"] h1 {
   font-family: var(--remix-display);
   font-weight: 640;
   letter-spacing: -0.012em;
@@ -948,20 +956,31 @@ h1 {
 
 .stage[data-moment="relevo-generacional"] .title-highlight,
 .stage[data-moment="auditorio-grados"] .title-highlight,
-.stage[data-moment="universidad-mundo"] .title-highlight {
+.stage[data-moment="universidad-mundo"] .title-highlight,
+.stage[data-moment="academia-industria-ciudad"] .title-highlight,
+.stage[data-moment="impacto"] .title-highlight {
   -webkit-text-fill-color: var(--highlight-color);
   color: var(--highlight-color);
 }
 
 .stage[data-moment="relevo-generacional"] .subtitle,
 .stage[data-moment="auditorio-grados"] .subtitle,
-.stage[data-moment="universidad-mundo"] .subtitle {
+.stage[data-moment="universidad-mundo"] .subtitle,
+.stage[data-moment="academia-industria-ciudad"] .subtitle,
+.stage[data-moment="impacto"] .subtitle {
   font-family: var(--remix-body);
   color: rgba(199, 191, 255, 0.78);
 }
 
 .stage[data-moment="relevo-generacional"] #moment-number,
 .stage[data-moment="auditorio-grados"] #moment-number,
-.stage[data-moment="universidad-mundo"] #moment-number {
+.stage[data-moment="universidad-mundo"] #moment-number,
+.stage[data-moment="academia-industria-ciudad"] #moment-number,
+.stage[data-moment="impacto"] #moment-number {
   font-family: var(--remix-display);
+}
+
+.stage[data-moment="academia-industria-ciudad"] .copy-layer,
+.stage[data-moment="impacto"] .copy-layer {
+  width: min(44%, 620px);
 }

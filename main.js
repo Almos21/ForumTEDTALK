@@ -43,6 +43,18 @@ const TITLE_HIGHLIGHTS = {
     es: [{ text: "La Universidad decidió encontrarse con el mundo.", tone: "cyan" }],
     pt: [{ text: "A Universidade decidiu se encontrar com o mundo.", tone: "cyan" }],
   },
+  "academia-industria-ciudad": {
+    es: [
+      { text: "Academia", tone: "cyan" },
+      { text: "Industria", tone: "red" },
+      { text: "Ciudad", tone: "magenta" },
+    ],
+    pt: [
+      { text: "Academia", tone: "cyan" },
+      { text: "Indústria", tone: "red" },
+      { text: "Cidade", tone: "magenta" },
+    ],
+  },
   impacto: {
     es: [{ text: "El impacto sí.", tone: "red" }],
     pt: [{ text: "O impacto, sim.", tone: "red" }],

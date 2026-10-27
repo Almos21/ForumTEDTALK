@@ -107,6 +107,13 @@ class VisualSystem {
     // cúmulos son halados de vuelta hacia el centro. ---
     this.buildRedNetwork();
 
+    // --- Slides 4 & 5 "triad" y "impact": 3 grupos con forma cuadrada,
+    // triangular y circular. En el slide 4 están incompletas y se halan de vez
+    // en cuando entre sí pero siempre conectadas. En el slide 5 llega un nuevo
+    // cúmulo desde fuera de la vista hacia el centro, se reúne, se dispersa
+    // entre los 3 grupos y los completa. ---
+    this.buildTriadShapes();
+
     // Foto circular de borde desvanecido que puede ubicarse en distintos
     // puntos del mapa según la diapositiva.
     this.photoConfig = null;
@@ -340,6 +347,388 @@ class VisualSystem {
     const pullStart = timing.formDuration + this.telaranaWebDuration + timing.holdAfterWeb;
     const pullEnd = pullStart + timing.pullDuration;
     return smoothstep(pullStart, pullEnd, this.momentTime);
+  }
+
+  // === Slides 4 & 5: Tres grupos (Cuadrado, Triángulo, Círculo) ===
+  buildTriadShapes() {
+    // 3 figuras: 0 = Cuadrado (Academia), 1 = Triángulo (Industria), 2 = Círculo (Ciudad).
+    // Las 94 partículas base (antigua generación) forman las 3 figuras incompletas en el slide 4.
+    // Las 44 partículas de refuerzo (nueva generación) llegan en el slide 5 desde fuera de la
+    // vista hacia el centro, se reúnen, se dispersan y completan las 3 figuras (46 partículas c/u).
+
+    // 1. Cuadrado (Grupo 0): 31 base + 15 completers = 46 puntos.
+    // En slide 4 faltan los 15 puntos del lado derecho (lado que mira al centro).
+    const squareBase = [];
+    // Lado superior: 11 puntos (perimeterOrder 0..10)
+    for (let i = 0; i <= 10; i += 1) {
+      squareBase.push({ lx: -1.0 + (2.0 * i) / 10, ly: -1.0, perimeterOrder: i });
+    }
+    // Lado inferior: 10 puntos (perimeterOrder 26..35)
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      squareBase.push({ lx: 1.0 - 2.0 * t, ly: 1.0, perimeterOrder: 26 + i });
+    }
+    // Lado izquierdo: 10 puntos (perimeterOrder 36..45)
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      squareBase.push({ lx: -1.0, ly: 1.0 - 2.0 * t, perimeterOrder: 36 + i });
+    }
+    // Lado derecho (incompleto en slide 4, completado en slide 5): 15 puntos (perimeterOrder 11..25)
+    const squareCompleters = [];
+    for (let k = 0; k < 15; k += 1) {
+      const t = (k + 0.5) / 15;
+      squareCompleters.push({ lx: 1.0, ly: -1.0 + 2.0 * t, perimeterOrder: 11 + k });
+    }
+
+    // 2. Triángulo (Grupo 1): 31 base + 15 completers = 46 puntos.
+    // Vértice superior en (0, -1.15), base de (-1.05, 0.75) a (1.05, 0.75).
+    // En slide 4 falta la base inferior (lado que mira al centro).
+    const triangleBase = [];
+    // Lado izquierdo: 16 puntos (perimeterOrder 0..15, desde vértice a esquina inferior izquierda)
+    for (let i = 0; i <= 15; i += 1) {
+      const t = i / 15;
+      triangleBase.push({ lx: lerp(0, -1.05, t), ly: lerp(-1.15, 0.75, t), perimeterOrder: i });
+    }
+    // Lado derecho: 15 puntos (perimeterOrder 31..45, desde esquina inferior derecha hacia el vértice)
+    for (let i = 0; i < 15; i += 1) {
+      const t = i / 14;
+      triangleBase.push({ lx: lerp(1.05, 0, t), ly: lerp(0.75, -1.15, t), perimeterOrder: 31 + i });
+    }
+    // Base inferior (incompleta en slide 4, completada en slide 5): 15 puntos (perimeterOrder 16..30)
+    const triangleCompleters = [];
+    for (let k = 0; k < 15; k += 1) {
+      const t = (k + 0.5) / 15;
+      triangleCompleters.push({ lx: lerp(-1.05, 1.05, t), ly: 0.75, perimeterOrder: 16 + k });
+    }
+
+    // 3. Círculo (Grupo 2): 32 base + 14 completers = 46 puntos.
+    // En slide 4 falta el arco que mira hacia el centro (de 0.7*PI a 1.36*PI, ~119°).
+    const circleBase = [];
+    const startArc = 1.36 * Math.PI;
+    const arcSpan = 1.34 * Math.PI;
+    for (let i = 0; i < 32; i += 1) {
+      const angle = startArc + (i / 31) * arcSpan;
+      circleBase.push({ lx: Math.cos(angle), ly: Math.sin(angle), perimeterOrder: i });
+    }
+    // Arco faltante (completado en slide 5): 14 puntos (perimeterOrder 32..45, de 0.7*PI a 1.36*PI)
+    const circleCompleters = [];
+    const gapStart = 0.7 * Math.PI;
+    const gapSpan = startArc - gapStart;
+    for (let k = 0; k < 14; k += 1) {
+      const angle = gapStart + ((k + 0.5) / 14) * gapSpan;
+      circleCompleters.push({ lx: Math.cos(angle), ly: Math.sin(angle), perimeterOrder: 32 + k });
+    }
+
+    // Asignación de roles a las 138 partículas
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      if (i < this.oldCount) {
+        p.isCompleter = false;
+        if (i < 31) {
+          p.triadGroup = 0; // Cuadrado
+          p.triadLocal = squareBase[i];
+          p.perimeterOrder = squareBase[i].perimeterOrder;
+        } else if (i < 62) {
+          p.triadGroup = 1; // Triángulo
+          p.triadLocal = triangleBase[i - 31];
+          p.perimeterOrder = triangleBase[i - 31].perimeterOrder;
+        } else {
+          p.triadGroup = 2; // Círculo
+          p.triadLocal = circleBase[i - 62];
+          p.perimeterOrder = circleBase[i - 62].perimeterOrder;
+        }
+      } else {
+        p.isCompleter = true;
+        const k = i - this.oldCount; // 0..43
+        p.completerOrder = k;
+        p.offscreenAngle = (k / 44) * TAU + (seededUnit(p.seed * 37 + 5) - 0.5) * 0.45;
+        p.offscreenDistFactor = 1.3 + seededUnit(p.seed * 19 + 11) * 0.45;
+
+        if (k < 15) {
+          p.triadGroup = 0;
+          p.triadLocal = squareCompleters[k];
+          p.perimeterOrder = squareCompleters[k].perimeterOrder;
+        } else if (k < 30) {
+          const idx = k - 15;
+          p.triadGroup = 1;
+          p.triadLocal = triangleCompleters[idx];
+          p.perimeterOrder = triangleCompleters[idx].perimeterOrder;
+        } else {
+          const idx = k - 30;
+          p.triadGroup = 2;
+          p.triadLocal = circleCompleters[idx];
+          p.perimeterOrder = circleCompleters[idx].perimeterOrder;
+        }
+      }
+    }
+
+    this.triadSlide5Timing = {
+      streamStagger: 0.036,
+      arriveTravel: 1.5,
+      gatherHold: 1.4,
+      disperseTravel: 1.5,
+    };
+  }
+
+  getTriadCenter() {
+    return { x: this.width * 0.62, y: this.height * 0.48 };
+  }
+
+  getTriadAnchors(time) {
+    const base = Math.min(this.width, this.height);
+    const center = this.getTriadCenter();
+    const triadDist = base * 0.28;
+
+    // Posiciones base de los 3 grupos
+    const anchors = [
+      { x: center.x - triadDist * 0.95, y: center.y + triadDist * 0.62 }, // 0: Cuadrado
+      { x: center.x, y: center.y - triadDist * 0.92 }, // 1: Triángulo
+      { x: center.x + triadDist * 0.95, y: center.y + triadDist * 0.62 }, // 2: Círculo
+    ];
+
+    // "se halan de vez en cuando entre sí pero siempre conectadas":
+    // Ciclo periódico con eventos alternados donde pares de grupos se halan elásticamente.
+    const cycleDur = 6.6;
+    const tCycle = (time >= 0 ? time : 0) % cycleDur;
+    const events = [
+      { pair: [0, 1], start: 0.2, dur: 1.7 },
+      { pair: [1, 2], start: 2.3, dur: 1.7 },
+      { pair: [2, 0], start: 4.4, dur: 1.7 },
+    ];
+
+    this.triadPull = { pair: null, tension: 0 };
+    for (const ev of events) {
+      if (tCycle >= ev.start && tCycle < ev.start + ev.dur) {
+        const subT = (tCycle - ev.start) / ev.dur;
+        const envelope = Math.sin(subT * Math.PI);
+        const tension = Math.pow(envelope, 1.4);
+        const pullDist = base * 0.048 * tension;
+
+        const a = anchors[ev.pair[0]];
+        const b = anchors[ev.pair[1]];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const dist = Math.hypot(dx, dy) || 1;
+        const ux = dx / dist;
+        const uy = dy / dist;
+
+        a.x += ux * pullDist;
+        a.y += uy * pullDist;
+        b.x -= ux * pullDist;
+        b.y -= uy * pullDist;
+
+        this.triadPull = { pair: ev.pair, tension };
+        break;
+      }
+    }
+
+    return anchors;
+  }
+
+  drawTriadAmbient(ctx, isImpact) {
+    const base = Math.min(this.width, this.height);
+    const center = this.getTriadCenter();
+    const anchors = this.getTriadAnchors(this.time);
+    const groupColors = [CONFIG.palette.eventCyan, CONFIG.palette.eventRed, CONFIG.palette.eventMagenta];
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    // Resplandor en cada uno de los 3 grupos
+    for (let i = 0; i < 3; i += 1) {
+      const a = anchors[i];
+      const r = base * 0.16;
+      const glow = ctx.createRadialGradient(a.x, a.y, 0, a.x, a.y, r);
+      glow.addColorStop(0, rgba(groupColors[i], 0.13 + this.params.intensity * 0.05));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(a.x - r, a.y - r, r * 2, r * 2);
+    }
+
+    // En slide 5: núcleo de luz en el centro mientras las partículas se reúnen
+    if (isImpact) {
+      const gatherGlowAlpha = smoothstep(0.3, 1.6, this.momentTime) * (1 - smoothstep(3.5, 5.0, this.momentTime));
+      if (gatherGlowAlpha > 0.01) {
+        const r = base * (0.12 + Math.sin(this.time * 3.5) * 0.02);
+        const centerGlow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        centerGlow.addColorStop(0, rgba(CONFIG.palette.forumGold, 0.28 * gatherGlowAlpha));
+        centerGlow.addColorStop(0.5, rgba(CONFIG.palette.eventCyan, 0.14 * gatherGlowAlpha));
+        centerGlow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = centerGlow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      }
+
+      // Al completarse (a partir de ~5.3s), onda de resonancia e impacto armónico
+      if (this.momentTime > 5.3) {
+        const completionTime = this.momentTime - 5.3;
+        const waveProgress = Math.min(1, completionTime / 2.5);
+        for (let i = 0; i < 3; i += 1) {
+          const a = anchors[i];
+          const waveR = base * (0.05 + waveProgress * 0.18);
+          const waveAlpha = (1 - waveProgress) * 0.22;
+          ctx.strokeStyle = rgba(groupColors[i], waveAlpha);
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(a.x, a.y, waveR, 0, TAU);
+          ctx.stroke();
+        }
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawTriadConnections(ctx, isImpact) {
+    const base = Math.min(this.width, this.height);
+    const center = this.getTriadCenter();
+    const groupColors = [CONFIG.palette.eventCyan, CONFIG.palette.eventRed, CONFIG.palette.eventMagenta];
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // 1. Conexiones perimetrales dentro de cada figura (para que el contorno sea claramente visible)
+    const groups = [[], [], []];
+    for (const p of this.particles) {
+      if (p.triadGroup !== undefined && p.triadAlpha > 0.2 && p.isJoined) {
+        groups[p.triadGroup].push(p);
+      }
+    }
+
+    for (let g = 0; g < 3; g += 1) {
+      const pts = groups[g].sort((a, b) => a.perimeterOrder - b.perimeterOrder);
+      const col = groupColors[g];
+
+      for (let i = 0; i < pts.length; i += 1) {
+        const a = pts[i];
+        for (let j = i + 1; j < pts.length; j += 1) {
+          const b = pts[j];
+          const diff = Math.abs(a.perimeterOrder - b.perimeterOrder);
+          const isNeighbor = diff === 1 || diff === 45;
+          if (!isNeighbor) continue;
+
+          const dist = Math.hypot(a.px - b.px, a.py - b.py);
+          if (dist > base * 0.16) continue;
+
+          ctx.strokeStyle = rgba(col, 0.55);
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(a.px, a.py);
+          ctx.lineTo(b.px, b.py);
+          ctx.stroke();
+        }
+      }
+
+      // Red interna (malla sutil estilo telaraña como en el slide 3)
+      const maxIntraDist = base * 0.075;
+      for (let i = 0; i < pts.length; i += 1) {
+        const a = pts[i];
+        for (let j = i + 1; j < pts.length; j += 2) {
+          const b = pts[j];
+          const dist = Math.hypot(a.px - b.px, a.py - b.py);
+          if (dist > maxIntraDist) continue;
+          const strength = 1 - dist / maxIntraDist;
+          ctx.strokeStyle = rgba(CONFIG.palette.eventSilver, 0.06 + strength * 0.18);
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(a.px, a.py);
+          ctx.lineTo(b.px, b.py);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // 2. Red inter-grupal ("conectados entre sí como en una red como la de la 3"):
+    // Hilos dorados entre los 3 grupos, con tensión visible cuando se halan.
+    const pull = this.triadPull || { pair: null, tension: 0 };
+    const pairs = [
+      [0, 1],
+      [1, 2],
+      [2, 0],
+    ];
+
+    for (const [g1, g2] of pairs) {
+      const pts1 = groups[g1];
+      const pts2 = groups[g2];
+      if (!pts1.length || !pts2.length) continue;
+
+      const isPullingThisPair = pull.pair && pull.pair[0] === g1 && pull.pair[1] === g2;
+      const tension = isPullingThisPair ? pull.tension : 0;
+
+      const maxInterDist = base * 0.55;
+      let drawn = 0;
+      for (let i = 0; i < pts1.length && drawn < 10; i += 3) {
+        const a = pts1[i];
+        for (let j = 0; j < pts2.length && drawn < 10; j += 4) {
+          const b = pts2[j];
+          const dist = Math.hypot(a.px - b.px, a.py - b.py);
+          if (dist > maxInterDist) continue;
+
+          const strength = 1 - dist / maxInterDist;
+          const alpha = Math.min(0.85, (0.12 + strength * 0.28) * (1 + tension * 1.5));
+          ctx.strokeStyle = rgba(CONFIG.palette.forumGold, alpha);
+          ctx.lineWidth = 0.9 + tension * 1.2;
+          ctx.beginPath();
+          ctx.moveTo(a.px, a.py);
+          ctx.lineTo(b.px, b.py);
+          ctx.stroke();
+          drawn += 1;
+        }
+      }
+    }
+
+    // 3. En slide 5: mientras el cúmulo se reúne o viaja hacia las figuras
+    if (isImpact && this.momentTime < 5.3) {
+      for (const p of this.particles) {
+        if (!p.isCompleter || p.triadAlpha < 0.2 || p.isJoined) continue;
+        const distToCenter = Math.hypot(p.px - center.x, p.py - center.y);
+        if (distToCenter > base * 0.015 && distToCenter < base * 0.45) {
+          ctx.strokeStyle = rgba(CONFIG.palette.eventCyan, 0.22);
+          ctx.lineWidth = 0.9;
+          ctx.beginPath();
+          ctx.moveTo(center.x, center.y);
+          ctx.lineTo(p.px, p.py);
+          ctx.stroke();
+        }
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawTriadParticles(ctx, isImpact) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const groupColors = [CONFIG.palette.eventCyan, CONFIG.palette.eventRed, CONFIG.palette.eventMagenta];
+
+    ctx.save();
+    ctx.shadowBlur = 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.triadAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      let particleSize = p.size * sizeBoost;
+
+      if (p.isCompleter && isImpact && !p.isJoined) {
+        // En tránsito o en el centro: brillo dorado / cian intenso
+        color = CONFIG.palette.forumGold;
+        particleSize *= 1.28;
+      } else {
+        color = groupColors[p.triadGroup] || CONFIG.palette.eventSilver;
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.4 + p.drift) * 0.18;
+      const alpha = Math.min(0.96, alphaVal * alphaBoost * pulse);
+
+      ctx.shadowColor = rgba(color, Math.min(1, alpha * 1.5));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, particleSize, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.restore();
   }
 
   // === Foto circular con borde desvanecido ===
@@ -703,7 +1092,7 @@ class VisualSystem {
     }
 
     if (state === "triad" || state === "impact") {
-      this.drawTriadFields(ctx, state === "impact");
+      this.drawTriadAmbient(ctx, state === "impact");
       return;
     }
 
@@ -1653,34 +2042,88 @@ class VisualSystem {
         continue;
       }
 
-      if (state === "triad") {
-        const anchors = [
-          [this.width * 0.58, this.height * 0.28],
-          [this.width * 0.78, this.height * 0.62],
-          [this.width * 0.43, this.height * 0.66],
-        ];
-        const anchor = anchors[p.lane];
-        rx *= 0.42;
-        ry *= 0.36;
-        p.px = lerp(p.px || anchor[0], anchor[0] + Math.cos(angle) * rx, 0.042);
-        p.py = lerp(p.py || anchor[1], anchor[1] + Math.sin(angle) * ry, 0.042);
-        continue;
-      }
+      if (state === "triad" || state === "impact") {
+        const isImpact = state === "impact";
+        const center = this.getTriadCenter();
+        const base = Math.min(this.width, this.height);
+        const shapeR = base * 0.125;
+        const anchors = this.getTriadAnchors(this.time);
+        const anchor = anchors[p.triadGroup];
 
-      if (state === "impact") {
-        const anchors = [
-          [this.width * 0.58, this.height * 0.28],
-          [this.width * 0.78, this.height * 0.62],
-          [this.width * 0.43, this.height * 0.66],
-        ];
-        const anchor = anchors[p.lane];
-        const impactPull = 0.4 + (Math.sin(this.time * 0.56 + p.drift) + 1) * 0.12;
-        const localCx = lerp(anchor[0], cx, impactPull);
-        const localCy = lerp(anchor[1], cy, impactPull);
-        rx *= 0.34;
-        ry *= 0.3;
-        p.px = lerp(p.px || localCx, localCx + Math.cos(angle) * rx, 0.044);
-        p.py = lerp(p.py || localCy, localCy + Math.sin(angle) * ry, 0.044);
+        const slotX = anchor.x + p.triadLocal.lx * shapeR;
+        const slotY = anchor.y + p.triadLocal.ly * shapeR;
+
+        const breatheX = Math.sin(this.time * 1.3 + p.drift) * (base * 0.0035);
+        const breatheY = Math.cos(this.time * 1.1 + p.drift) * (base * 0.0035);
+
+        if (!p.isCompleter) {
+          p.px = lerp(p.px || slotX, slotX + breatheX, 0.055);
+          p.py = lerp(p.py || slotY, slotY + breatheY, 0.055);
+          p.triadAlpha = 1;
+          p.isJoined = true;
+          continue;
+        }
+
+        if (!isImpact) {
+          const offDist = base * p.offscreenDistFactor;
+          const offX = center.x + Math.cos(p.offscreenAngle) * offDist;
+          const offY = center.y + Math.sin(p.offscreenAngle) * offDist;
+          p.px = offX;
+          p.py = offY;
+          p.triadAlpha = 0;
+          p.isJoined = false;
+          continue;
+        }
+
+        const timing = this.triadSlide5Timing;
+        const k = p.completerOrder;
+        const offDist = base * p.offscreenDistFactor;
+        const offX = center.x + Math.cos(p.offscreenAngle) * offDist;
+        const offY = center.y + Math.sin(p.offscreenAngle) * offDist;
+
+        const tDepart = k * timing.streamStagger;
+        const tArrive = tDepart + timing.arriveTravel;
+        const tGatherEnd = timing.arriveTravel + 43 * timing.streamStagger + timing.gatherHold;
+        const tDisperseStart = tGatherEnd;
+        const tFlightStart = tDisperseStart + (k % 15) * 0.05;
+        const tFlightEnd = tFlightStart + timing.disperseTravel;
+
+        if (this.momentTime < tDepart) {
+          p.px = offX;
+          p.py = offY;
+          p.triadAlpha = 0;
+          p.isJoined = false;
+        } else if (this.momentTime < tArrive) {
+          const ease = smoothstep(tDepart, tArrive, this.momentTime);
+          const perpAngle = p.offscreenAngle + Math.PI / 2;
+          const bow = Math.sin(ease * Math.PI) * base * 0.045 * (k % 2 === 0 ? 1 : -1);
+          p.px = lerp(offX, center.x, ease) + Math.cos(perpAngle) * bow;
+          p.py = lerp(offY, center.y, ease) + Math.sin(perpAngle) * bow;
+          p.triadAlpha = ease;
+          p.isJoined = false;
+        } else if (this.momentTime < tFlightStart) {
+          const swirlAngle = (k / 44) * TAU + this.time * 2.2;
+          const swirlR = base * (0.012 + seededUnit(p.seed * 23 + 7) * 0.038);
+          const cx_swirl = center.x + Math.cos(swirlAngle) * swirlR;
+          const cy_swirl = center.y + Math.sin(swirlAngle) * swirlR * 0.65;
+          p.px = lerp(p.px || cx_swirl, cx_swirl, 0.08);
+          p.py = lerp(p.py || cy_swirl, cy_swirl, 0.08);
+          p.triadAlpha = 1;
+          p.isJoined = false;
+        } else if (this.momentTime < tFlightEnd) {
+          const ease = smoothstep(tFlightStart, tFlightEnd, this.momentTime);
+          const perpAngle = Math.atan2(slotY - center.y, slotX - center.x) + Math.PI / 2;
+          const bow = Math.sin(ease * Math.PI) * base * 0.04 * (k % 2 === 0 ? 1 : -1);
+          p.px = lerp(center.x, slotX, ease) + Math.cos(perpAngle) * bow;
+          p.py = lerp(center.y, slotY, ease) + Math.sin(perpAngle) * bow;
+          p.triadAlpha = 1;
+          p.isJoined = ease > 0.85;
+        } else {
+          p.px = lerp(p.px || slotX, slotX + breatheX, 0.06);
+          p.py = lerp(p.py || slotY, slotY + breatheY, 0.06);
+          p.triadAlpha = 1;
+          p.isJoined = true;
+        }
         continue;
       }
 
@@ -1784,6 +2227,10 @@ class VisualSystem {
     }
     if (state === "telarana") {
       this.drawTelaranaWeb(ctx);
+      return;
+    }
+    if (state === "triad" || state === "impact") {
+      this.drawTriadConnections(ctx, state === "impact");
       return;
     }
     if (state === "duality") return;
@@ -1913,6 +2360,13 @@ class VisualSystem {
       return;
     }
 
+    const isTriad = this.current?.state === "triad";
+    const isImpact = this.current?.state === "impact";
+    if (isTriad || isImpact) {
+      this.drawTriadParticles(ctx, isImpact);
+      return;
+    }
+
     for (const p of this.particles) {
       const dualRole = isDuality ? this.getDualityRole(p) : null;
       const youngDual = dualRole === "young";
@@ -1976,7 +2430,9 @@ class VisualSystem {
     if (
       this.current?.state === "genesis" ||
       this.current?.state === "ingreso" ||
-      this.current?.state === "telarana"
+      this.current?.state === "telarana" ||
+      this.current?.state === "triad" ||
+      this.current?.state === "impact"
     )
       return;
     const cx = this.width * 0.66;
@@ -2064,9 +2520,6 @@ class VisualSystem {
     }
     if (state === "duality") {
       this.drawDualityForeground(ctx);
-    }
-    if (state === "impact") {
-      this.drawImpactRings(ctx, 0.7);
     }
     if (state === "community") {
       this.drawMatureBonds(ctx, 0.82);

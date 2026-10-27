@@ -17,18 +17,6 @@ window.CONFIG = {
         anchor: "array-center",
         diameter: 0.36,
       },
-      "academia-industria-ciudad": {
-        type: "image",
-        src: "./assets/slide-04-actores.webp",
-        alt: "Panel con publico en Forum UPB",
-        placement: "background",
-      },
-      impacto: {
-        type: "image",
-        src: "./assets/slide-05-impacto.webp",
-        alt: "Evento con actores institucionales y empresariales reunidos",
-        placement: "background",
-      },
       "nuevas-rutas": {
         type: "image",
         src: "./assets/slide-08-rutas.webp",
