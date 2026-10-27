@@ -114,6 +114,13 @@ class VisualSystem {
     // entre los 3 grupos y los completa. ---
     this.buildTriadShapes();
 
+    // --- Slides 6 & 7 "community" y "trust": en el slide 6, llegan muchas
+    // partículas desde fuera de la vista reuniéndose en el centro, y luego salen
+    // hacia el lado izquierdo construyendo la silueta de un castillo. En el
+    // slide 7 este castillo se desplaza al centro, va creciendo, haciéndose más
+    // brillante y con más detalles. ---
+    this.buildCommunityCastle();
+
     // Foto circular de borde desvanecido que puede ubicarse en distintos
     // puntos del mapa según la diapositiva.
     this.photoConfig = null;
@@ -578,6 +585,325 @@ class VisualSystem {
     ctx.restore();
   }
 
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   drawTriadConnections(ctx, isImpact) {
     const base = Math.min(this.width, this.height);
     const center = this.getTriadCenter();
@@ -695,6 +1021,325 @@ class VisualSystem {
     ctx.restore();
   }
 
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   drawTriadParticles(ctx, isImpact) {
     const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
     const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
@@ -725,6 +1370,325 @@ class VisualSystem {
       ctx.fillStyle = rgba(color, alpha);
       ctx.beginPath();
       ctx.arc(p.px, p.py, particleSize, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
       ctx.fill();
     }
 
@@ -781,6 +1745,325 @@ class VisualSystem {
     ctx.save();
     ctx.globalAlpha = opacity;
     ctx.drawImage(this.photoBuffer, cx - size / 2, cy - size / 2);
+    ctx.restore();
+  }
+
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
     ctx.restore();
   }
 
@@ -1164,6 +2447,325 @@ class VisualSystem {
     ctx.restore();
   }
 
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   drawTelaranaAmbient(ctx) {
     const base = Math.min(this.width, this.height);
     const center = this.redCenter();
@@ -1187,6 +2789,325 @@ class VisualSystem {
       ctx.fillStyle = glow;
       ctx.fillRect(anchor.x - r, anchor.y - r, r * 2, r * 2);
     }
+    ctx.restore();
+  }
+
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
     ctx.restore();
   }
 
@@ -1240,6 +3161,325 @@ class VisualSystem {
     ctx.restore();
   }
 
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   drawGenesisAmbient(ctx) {
     const base = Math.min(this.width, this.height);
     const groundY = this.height * 0.84;
@@ -1262,6 +3502,325 @@ class VisualSystem {
     glow.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = glow;
     ctx.fillRect(this.width * 0.08, groundY - base * 0.03, this.width * 0.84, base * 0.09);
+
+    ctx.restore();
+  }
+
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
 
     ctx.restore();
   }
@@ -1300,6 +3859,325 @@ class VisualSystem {
     ctx.restore();
   }
 
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   drawIngresoConnections(ctx) {
     const base = Math.min(this.width, this.height);
     const maxDist = base * 0.07;
@@ -1330,6 +4208,325 @@ class VisualSystem {
         ctx.stroke();
       }
     }
+    ctx.restore();
+  }
+
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
     ctx.restore();
   }
 
@@ -1367,6 +4564,325 @@ class VisualSystem {
         ctx.stroke();
       }
     }
+    ctx.restore();
+  }
+
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
     ctx.restore();
   }
 
@@ -1496,6 +5012,325 @@ class VisualSystem {
         ctx.stroke();
       }
     }
+    ctx.restore();
+  }
+
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
     ctx.restore();
   }
 
@@ -1639,6 +5474,325 @@ class VisualSystem {
     ctx.restore();
   }
 
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   drawForumVolume(ctx, scale = 1) {
     const amount = (0.035 + this.params.architecture * 0.12 + this.params.stability * 0.035) * scale;
     const cx = this.width * 0.64;
@@ -1673,6 +5827,325 @@ class VisualSystem {
     ctx.restore();
   }
 
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   drawOrbitalNet(ctx, scale = 1) {
     const amount = (0.05 + this.params.network * 0.14 + this.params.spiral * 0.08) * scale;
     const cx = this.width * 0.66;
@@ -1699,6 +6172,325 @@ class VisualSystem {
       ctx.strokeStyle = rgba(i % 3 === 0 ? this.colors[1] : CONFIG.palette.eventSilver, amount * (0.55 + phase * 0.35));
       ctx.stroke();
     }
+    ctx.restore();
+  }
+
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
     ctx.restore();
   }
 
@@ -1752,6 +6544,325 @@ class VisualSystem {
     ctx.restore();
   }
 
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   drawMatureBonds(ctx, scale = 1) {
     const cx = this.width * 0.65;
     const cy = this.height * 0.47;
@@ -1783,6 +6894,325 @@ class VisualSystem {
       ctx.moveTo(a.px, a.py);
       ctx.quadraticCurveTo(cpX, cpY, b.px, b.py);
       ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
     }
 
     ctx.restore();
@@ -1820,6 +7250,325 @@ class VisualSystem {
       ctx.arc(x, y, 1.4 + seededUnit(i + 47) * 1.4, 0, TAU);
       ctx.fill();
     }
+    ctx.restore();
+  }
+
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
     ctx.restore();
   }
 
@@ -2426,6 +8175,325 @@ class VisualSystem {
     ctx.restore();
   }
 
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   drawSpiral(ctx) {
     if (
       this.current?.state === "genesis" ||
@@ -2480,6 +8548,325 @@ class VisualSystem {
     ctx.restore();
   }
 
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   drawArchitecture(ctx) {
     return;
   }
@@ -2510,6 +8897,325 @@ class VisualSystem {
       ctx.lineTo(x + w * 0.84, y + h * 0.28);
       ctx.stroke();
     }
+    ctx.restore();
+  }
+
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
     ctx.restore();
   }
 
@@ -2613,6 +9319,325 @@ class VisualSystem {
     ctx.restore();
   }
 
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   drawImpactRings(ctx, scale) {
     const cx = this.width * 0.68;
     const cy = this.height * 0.48;
@@ -2626,6 +9651,325 @@ class VisualSystem {
       ctx.ellipse(cx, cy, r, r * 0.58, 0, 0, TAU);
       ctx.stroke();
     }
+    ctx.restore();
+  }
+
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
     ctx.restore();
   }
 
@@ -2646,6 +9990,325 @@ class VisualSystem {
     ctx.restore();
   }
 
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   drawRoutes(ctx, scale = 1) {
     ctx.save();
     ctx.lineWidth = 1.4;
@@ -2662,6 +10325,325 @@ class VisualSystem {
       ctx.strokeStyle = rgba(this.colors[i % 3], (0.08 + this.params.intensity * 0.1) * scale);
       ctx.stroke();
     }
+    ctx.restore();
+  }
+
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
     ctx.restore();
   }
 
@@ -2695,6 +10677,325 @@ class VisualSystem {
     ctx.restore();
   }
 
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   drawConstructionLattice(ctx) {
     const cx = this.width * 0.66;
     const cy = this.height * 0.48;
@@ -2720,6 +11021,325 @@ class VisualSystem {
     ctx.restore();
   }
 
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
   drawContinuityHalo(ctx) {
     const cx = this.width * 0.76;
     const cy = this.height * 0.52;
@@ -2733,6 +11353,325 @@ class VisualSystem {
       ctx.ellipse(cx, cy, base * (0.18 + i * 0.07), base * (0.08 + i * 0.035), 0, 0, TAU);
       ctx.stroke();
     }
+    ctx.restore();
+  }
+
+  // === Slides 6 & 7: Silueta de castillo para Comunidad y Confianza ===
+  buildCommunityCastle() {
+    // Silueta de fortaleza/castillo construida por las 138 partículas:
+    // Torreón central alto con almenas y cúspide, dos torres laterales simétricas,
+    // muros de unión, portal central arqueado, cimientos y ventanales.
+    const pts = [];
+
+    // 1. Torreón Central (Keep) - 20 puntos (más alto que las torres laterales)
+    // Lado izquierdo del torreón: 8 puntos (ny de 0.20 subiendo a -0.88)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: -0.26, ny: lerp(0.20, -0.88, t), part: "keep-wall-left" });
+    }
+    // Almenas y cúspide superior: 4 puntos
+    pts.push({ nx: -0.18, ny: -0.96, part: "keep-roof" });
+    pts.push({ nx: -0.06, ny: -1.05, part: "keep-roof" }); // pico central
+    pts.push({ nx: 0.06, ny: -1.05, part: "keep-roof" });
+    pts.push({ nx: 0.18, ny: -0.96, part: "keep-roof" });
+    // Lado derecho del torreón: 8 puntos (ny de -0.88 bajando a 0.20)
+    for (let i = 0; i < 8; i += 1) {
+      const t = i / 7;
+      pts.push({ nx: 0.26, ny: lerp(-0.88, 0.20, t), part: "keep-wall-right" });
+    }
+
+    // 2. Torre Izquierda - 25 puntos
+    // Muro exterior: 12 puntos (de base 1.0 subiendo a -0.52)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: -0.85, ny: lerp(1.0, -0.52, t), part: "tower-left-outer" });
+    }
+    // Almenas de torre izquierda: 7 puntos
+    pts.push({ nx: -0.85, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.78, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.74, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.70, ny: -0.54, part: "tower-left-crest" });
+    pts.push({ nx: -0.66, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.60, ny: -0.62, part: "tower-left-crest" });
+    pts.push({ nx: -0.55, ny: -0.62, part: "tower-left-crest" });
+    // Muro interior: 6 puntos (de -0.52 bajando a muro 0.15)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: -0.55, ny: lerp(-0.52, 0.15, t), part: "tower-left-inner" });
+    }
+
+    // 3. Torre Derecha - 25 puntos (simétrica)
+    // Muro interior: 6 puntos (de muro 0.15 subiendo a -0.52)
+    for (let i = 0; i < 6; i += 1) {
+      const t = i / 5;
+      pts.push({ nx: 0.55, ny: lerp(0.15, -0.52, t), part: "tower-right-inner" });
+    }
+    // Almenas de torre derecha: 7 puntos
+    pts.push({ nx: 0.55, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.60, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.66, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.70, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.74, ny: -0.54, part: "tower-right-crest" });
+    pts.push({ nx: 0.78, ny: -0.62, part: "tower-right-crest" });
+    pts.push({ nx: 0.85, ny: -0.62, part: "tower-right-crest" });
+    // Muro exterior: 12 puntos (de -0.52 bajando a base 1.0)
+    for (let i = 0; i < 12; i += 1) {
+      const t = i / 11;
+      pts.push({ nx: 0.85, ny: lerp(-0.52, 1.0, t), part: "tower-right-outer" });
+    }
+
+    // 4. Muros de Unión (Curtain walls) - 18 puntos
+    // Muro izquierdo (conecta torre izquierda a torreón central): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(-0.55, -0.26, t), ny: 0.15, part: "wall-left" });
+    }
+    pts.push({ nx: -0.48, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.40, ny: 0.08, part: "wall-left-merlon" });
+    pts.push({ nx: -0.33, ny: 0.08, part: "wall-left-merlon" });
+
+    // Muro derecho (conecta torreón central a torre derecha): 9 puntos
+    for (let i = 0; i < 6; i += 1) {
+      const t = (i + 0.5) / 6;
+      pts.push({ nx: lerp(0.26, 0.55, t), ny: 0.15, part: "wall-right" });
+    }
+    pts.push({ nx: 0.33, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.40, ny: 0.08, part: "wall-right-merlon" });
+    pts.push({ nx: 0.48, ny: 0.08, part: "wall-right-merlon" });
+
+    // 5. Portal / Arco Central - 13 puntos
+    // Jamba izquierda: 3 puntos
+    pts.push({ nx: -0.15, ny: 1.0, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: -0.15, ny: 0.72, part: "portal" });
+    // Curva del arco superior: 7 puntos
+    for (let i = 0; i < 7; i += 1) {
+      const angle = Math.PI - (i / 6) * Math.PI; // de PI a 0
+      const r = 0.15;
+      pts.push({ nx: Math.cos(angle) * r, ny: 0.72 - Math.sin(angle) * 0.18, part: "portal" });
+    }
+    // Jamba derecha: 3 puntos
+    pts.push({ nx: 0.15, ny: 0.72, part: "portal" });
+    pts.push({ nx: 0.15, ny: 0.86, part: "portal" });
+    pts.push({ nx: 0.15, ny: 1.0, part: "portal" });
+
+    // 6. Cimientos y Línea de Base (Ground) - 20 puntos
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(-0.88, -0.15, t), ny: 1.0, part: "ground" });
+    }
+    for (let i = 0; i < 10; i += 1) {
+      const t = i / 9;
+      pts.push({ nx: lerp(0.15, 0.88, t), ny: 1.0, part: "ground" });
+    }
+
+    // 7. Detalles de Silueta y Ventanales - 17 puntos
+    pts.push({ nx: 0.0, ny: -0.68, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -0.36, part: "detail" });
+    pts.push({ nx: -0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.09, ny: -0.52, part: "detail" });
+    pts.push({ nx: 0.0, ny: -1.14, part: "detail" }); // estandarte superior
+
+    // Ventanas de torre izquierda: 5 puntos
+    pts.push({ nx: -0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: -0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: -0.70, ny: 0.72, part: "detail" });
+
+    // Ventanas de torre derecha: 5 puntos
+    pts.push({ nx: 0.70, ny: -0.32, part: "detail" });
+    pts.push({ nx: 0.70, ny: -0.06, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.20, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.46, part: "detail" });
+    pts.push({ nx: 0.70, ny: 0.72, part: "detail" });
+
+    // Nódulo central: 1 punto
+    pts.push({ nx: 0.0, ny: 0.35, part: "detail" });
+
+    // Orden de construcción progresivo desde el suelo (ny=1.0) hacia la cima (ny=-1.14)
+    const sortedIndices = pts
+      .map((p, idx) => ({ idx, ny: p.ny }))
+      .sort((a, b) => b.ny - a.ny)
+      .map((item, buildOrder) => ({ idx: item.idx, buildOrder }));
+
+    const buildOrderMap = [];
+    for (const item of sortedIndices) {
+      buildOrderMap[item.idx] = item.buildOrder;
+    }
+
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const p = this.particles[i];
+      p.castlePt = pts[i];
+      p.castleBuildOrder = buildOrderMap[i];
+
+      // En Slide 6: llegan desde fuera de la pantalla (mayoría desde el lado izquierdo)
+      const isLeft = (i % 3) !== 0;
+      const angleBias = isLeft ? Math.PI + (seededUnit(p.seed * 31 + 3) - 0.5) * 1.5 : (i / 138) * TAU;
+      p.communityEntryAngle = angleBias;
+      p.communityEntryDist = 1.15 + seededUnit(p.seed * 47 + 19) * 0.45;
+    }
+
+    this.communityTiming = {
+      streamStagger: 0.009,
+      arriveTravel: 1.4,
+      gatherHold: 1.0,
+      buildTravel: 1.5,
+    };
+  }
+
+  drawCommunityAmbient(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const center = { x: this.width * 0.5, y: this.height * 0.48 };
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    if (!isTrust) {
+      // Slide 6: núcleo en el centro al reunirse, luego aura suave en el castillo a la izquierda
+      if (this.momentTime < 3.0) {
+        const r = base * (0.14 + Math.sin(this.time * 3) * 0.02);
+        const glow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.25));
+        glow.addColorStop(0.5, rgba(CONFIG.palette.eventMagenta, 0.12));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(center.x - r, center.y - r, r * 2, r * 2);
+      } else {
+        const lx = this.width * 0.30;
+        const ly = this.height * 0.54;
+        const r = base * 0.22;
+        const glow = ctx.createRadialGradient(lx, ly, 0, lx, ly, r);
+        glow.addColorStop(0, rgba(CONFIG.palette.eventCyan, 0.16));
+        glow.addColorStop(0.6, rgba(CONFIG.palette.eventMagenta, 0.08));
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.fillRect(lx - r, ly - r, r * 2, r * 2);
+      }
+    } else {
+      // Slide 7: el castillo se desplaza al centro, crece y se hace más brillante
+      const ease = smoothstep(0.0, 3.0, this.momentTime);
+      const curCx = lerp(this.width * 0.30, this.width * 0.50, ease);
+      const curCy = lerp(this.height * 0.54, this.height * 0.48, ease);
+      const r = lerp(base * 0.22, base * 0.42, ease);
+
+      const glow = ctx.createRadialGradient(curCx, curCy, 0, curCx, curCy, r);
+      glow.addColorStop(0, rgba(CONFIG.palette.forumGold, lerp(0.18, 0.35, ease)));
+      glow.addColorStop(0.45, rgba(CONFIG.palette.eventCyan, lerp(0.12, 0.22, ease)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(curCx - r, curCy - r, r * 2, r * 2);
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityConnections(ctx, isTrust) {
+    const base = Math.min(this.width, this.height);
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+    const curScale = isTrust ? lerp(base * 0.38, base * 0.62, ease) : base * 0.38;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Filtrar partículas que ya están posicionadas en la silueta
+    const active = this.particles.filter(p => p.castlePt && p.isBuilt && (p.castleAlpha ?? 1) > 0.3);
+
+    // 1. Líneas de contorno por partes estructurales
+    const parts = {};
+    for (const p of active) {
+      const part = p.castlePt.part;
+      if (!parts[part]) parts[part] = [];
+      parts[part].push(p);
+    }
+
+    const outlineColor = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventCyan;
+    const outlineAlpha = isTrust ? lerp(0.52, 0.85, ease) : 0.48;
+    const outlineWidth = isTrust ? lerp(1.2, 1.8, ease) : 1.2;
+
+    for (const partName in parts) {
+      const group = parts[partName];
+      for (let i = 0; i < group.length - 1; i += 1) {
+        const a = group[i];
+        const b = group[i + 1];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > curScale * 0.22) continue;
+
+        ctx.strokeStyle = rgba(outlineColor, outlineAlpha);
+        ctx.lineWidth = outlineWidth;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Malla interna de conexiones sutiles (estilo telaraña de comunidad)
+    const maxMeshDist = curScale * 0.14;
+    const meshAlpha = isTrust ? lerp(0.10, 0.26, ease) : 0.12;
+    for (let i = 0; i < active.length; i += 1) {
+      const a = active[i];
+      for (let j = i + 1; j < active.length; j += 2) {
+        const b = active[j];
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxMeshDist) continue;
+
+        const strength = 1 - dist / maxMeshDist;
+        const color = isTrust ? CONFIG.palette.forumGold : CONFIG.palette.eventSilver;
+        ctx.strokeStyle = rgba(color, (0.05 + strength * 0.20) * (isTrust ? 1.5 : 1.0));
+        ctx.lineWidth = 0.8 + (isTrust ? ease * 0.5 : 0);
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  drawCommunityParticles(ctx, isTrust) {
+    const alphaBoost = this.hasBackgroundAsset() ? 0.82 : 1;
+    const sizeBoost = this.hasBackgroundAsset() ? 0.76 : 1;
+    const ease = isTrust ? smoothstep(0.0, 3.0, this.momentTime) : 0;
+
+    ctx.save();
+    ctx.shadowBlur = isTrust ? lerp(9, 18, ease) : 9;
+
+    for (const p of this.particles) {
+      const alphaVal = p.castleAlpha ?? 1;
+      if (alphaVal < 0.02) continue;
+
+      let color;
+      if (isTrust) {
+        // En slide 7: oro radiante, cian resplandeciente y blanco
+        const goldRatio = lerp(0.4, 0.85, ease);
+        color = p.seed % 3 === 0 ? CONFIG.palette.eventCyan : p.seed % 5 === 0 ? "#ffffff" : CONFIG.palette.forumGold;
+      } else {
+        // En slide 6: cian, fucsia y plata
+        if (p.castlePt?.part === "keep-roof" || p.castlePt?.part === "keep-wall-left" || p.castlePt?.part === "keep-wall-right") {
+          color = CONFIG.palette.eventCyan;
+        } else if (p.castlePt?.part?.includes("tower")) {
+          color = CONFIG.palette.eventMagenta;
+        } else if (p.castlePt?.part === "portal" || p.castlePt?.part === "detail") {
+          color = CONFIG.palette.forumGold;
+        } else {
+          color = CONFIG.palette.eventSilver;
+        }
+      }
+
+      const pulse = 0.72 + Math.sin(this.time * 1.5 + p.drift) * 0.18;
+      const alpha = Math.min(1.0, alphaVal * alphaBoost * pulse * (isTrust ? lerp(0.9, 1.15, ease) : 0.95));
+      const pSize = p.size * (isTrust ? lerp(1.0, 1.35, ease) : 1.0) * sizeBoost;
+
+      ctx.shadowColor = rgba(color, Math.min(1.0, alpha * (isTrust ? 1.8 : 1.4)));
+      ctx.fillStyle = rgba(color, alpha);
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, pSize, 0, TAU);
+      ctx.fill();
+    }
+
     ctx.restore();
   }
 }
