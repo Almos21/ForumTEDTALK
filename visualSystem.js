@@ -101,6 +101,12 @@ class VisualSystem {
     };
     this.buildIngresoGrid();
 
+    // --- Slide 3 "telarana": la Universidad (núcleo central) se conecta con
+    // el mundo (varios mini cúmulos). Las partículas jóvenes salen del
+    // centro, se pegan a cada cúmulo tejiendo una red, y finalmente esos
+    // cúmulos son halados de vuelta hacia el centro. ---
+    this.buildRedNetwork();
+
     // Foto circular de borde desvanecido que puede ubicarse en distintos
     // puntos del mapa según la diapositiva.
     this.photoConfig = null;
@@ -258,6 +264,82 @@ class VisualSystem {
     const arcControlX = (queueOut.x + queueIn.x) / 2;
     const arcControlY = home.y + verticalDir * base * 0.2;
     return { home, queueOut, queueIn, arcControlX, arcControlY };
+  }
+
+  // === Slide 3: red de telaraña Universidad-mundo ===
+  buildRedNetwork() {
+    const clusterCount = 6;
+    this.redClusterCount = clusterCount;
+    this.redClusters = [];
+    for (let i = 0; i < clusterCount; i += 1) {
+      const angle = (i / clusterCount) * TAU + (seededUnit(i * 17 + 3) - 0.5) * 0.32;
+      const radiusFrac = 0.3 + seededUnit(i * 29 + 7) * 0.14;
+      this.redClusters.push({ angle, radiusFrac });
+    }
+
+    // Una pequeña semilla por cúmulo (mini cúmulos ya presentes cerca del
+    // centro) y el resto de la generación antigua conforma el núcleo denso
+    // que representa a la Universidad.
+    const seedsPerCluster = 3;
+    let oldIndex = 0;
+    for (let c = 0; c < clusterCount; c += 1) {
+      for (let s = 0; s < seedsPerCluster; s += 1) {
+        const p = this.particles[oldIndex];
+        p.redRole = "seed";
+        p.redCluster = c;
+        p.redSeedIndex = s;
+        oldIndex += 1;
+      }
+    }
+    for (; oldIndex < this.oldCount; oldIndex += 1) {
+      const p = this.particles[oldIndex];
+      p.redRole = "core";
+      p.redCluster = null;
+    }
+
+    // Las partículas jóvenes se reparten entre los cúmulos (round-robin) y
+    // salen del centro una por una, en orden entrelazado entre cúmulos, para
+    // que el tejido de la red se vea progresivo y no en oleadas.
+    const newCount = this.particles.length - this.oldCount;
+    for (let i = 0; i < newCount; i += 1) {
+      const p = this.particles[this.oldCount + i];
+      p.redRole = "web";
+      p.redCluster = i % clusterCount;
+      p.redDepartureIndex = i;
+      p.redAttach = 0;
+    }
+
+    this.telaranaTiming = {
+      formDuration: 3.4, // la Universidad y los cúmulos toman su lugar
+      webStagger: 0.26, // separación entre la salida de una partícula joven y la siguiente
+      webTravel: 1.5, // duración del viaje de cada partícula hasta pegarse a su cúmulo
+      holdAfterWeb: 2.2, // pausa con la red completamente tejida
+      pullDuration: 5, // duración de halar los cúmulos hacia el centro
+    };
+    this.telaranaWebDuration = (newCount - 1) * this.telaranaTiming.webStagger + this.telaranaTiming.webTravel;
+  }
+
+  redCenter() {
+    return { x: this.width * 0.6, y: this.height * 0.46 };
+  }
+
+  redClusterAnchor(clusterIndex, pull = 0) {
+    const cluster = this.redClusters[clusterIndex];
+    const base = Math.min(this.width, this.height);
+    const center = this.redCenter();
+    const radius = base * cluster.radiusFrac * (1 - pull);
+    return {
+      x: center.x + Math.cos(cluster.angle) * radius,
+      y: center.y + Math.sin(cluster.angle) * radius * 0.6,
+    };
+  }
+
+  // 0 = cúmulos en su posición original; 1 = ya halados hasta el centro.
+  getTelaranaPull() {
+    const timing = this.telaranaTiming;
+    const pullStart = timing.formDuration + this.telaranaWebDuration + timing.holdAfterWeb;
+    const pullEnd = pullStart + timing.pullDuration;
+    return smoothstep(pullStart, pullEnd, this.momentTime);
   }
 
   // === Foto circular con borde desvanecido ===
@@ -606,6 +688,11 @@ class VisualSystem {
       return;
     }
 
+    if (state === "telarana") {
+      this.drawTelaranaAmbient(ctx);
+      return;
+    }
+
     if (state === "latent") {
       this.drawLatentPotential(ctx);
       return;
@@ -685,6 +772,82 @@ class VisualSystem {
       ctx.ellipse(cx, cy, r, r * 0.5, -0.08, 0.2 * TAU, 0.86 * TAU);
       ctx.stroke();
     }
+    ctx.restore();
+  }
+
+  drawTelaranaAmbient(ctx) {
+    const base = Math.min(this.width, this.height);
+    const center = this.redCenter();
+    const pull = this.getTelaranaPull();
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    const coreGlow = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, base * 0.22);
+    coreGlow.addColorStop(0, rgba(this.colors[0], 0.15 + this.params.intensity * 0.08));
+    coreGlow.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = coreGlow;
+    ctx.fillRect(center.x - base * 0.22, center.y - base * 0.22, base * 0.44, base * 0.44);
+
+    for (let i = 0; i < this.redClusterCount; i += 1) {
+      const anchor = this.redClusterAnchor(i, pull);
+      const r = base * (0.075 + (1 - pull) * 0.03);
+      const glow = ctx.createRadialGradient(anchor.x, anchor.y, 0, anchor.x, anchor.y, r);
+      glow.addColorStop(0, rgba(this.colors[1] || this.colors[0], 0.11 * (1 - pull * 0.4)));
+      glow.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(anchor.x - r, anchor.y - r, r * 2, r * 2);
+    }
+    ctx.restore();
+  }
+
+  drawTelaranaWeb(ctx) {
+    const center = this.redCenter();
+    const base = Math.min(this.width, this.height);
+    const boost = this.hasBackgroundAsset() ? 0.72 : 1;
+
+    ctx.save();
+    ctx.lineCap = "round";
+
+    // Hilos radiales: del centro (la Universidad) a cada partícula joven que
+    // ya salió hacia su cúmulo — la telaraña que conecta el núcleo con el mundo.
+    for (const p of this.particles) {
+      if (p.redRole !== "web") continue;
+      const attach = p.redAttach ?? 0;
+      if (attach < 0.04) continue;
+      const alpha = Math.min(0.5, attach * 0.42) * boost;
+      ctx.strokeStyle = rgba(CONFIG.palette.forumGold, alpha);
+      ctx.lineWidth = 1 + attach * 0.6;
+      ctx.beginPath();
+      ctx.moveTo(center.x, center.y);
+      ctx.lineTo(p.px, p.py);
+      ctx.stroke();
+    }
+
+    // Red local dentro de cada cúmulo: conecta semillas y partículas jóvenes
+    // ya adheridas, dando la textura tejida de la telaraña alrededor de cada cúmulo.
+    const maxDist = base * 0.085;
+    for (let i = 0; i < this.particles.length; i += 1) {
+      const a = this.particles[i];
+      if (a.redRole !== "seed" && a.redRole !== "web") continue;
+      if (a.redRole === "web" && (a.redAttach ?? 0) < 0.55) continue;
+      for (let j = i + 1; j < this.particles.length; j += 1) {
+        const b = this.particles[j];
+        if (b.redCluster !== a.redCluster) continue;
+        if (b.redRole !== "seed" && b.redRole !== "web") continue;
+        if (b.redRole === "web" && (b.redAttach ?? 0) < 0.55) continue;
+        const dist = Math.hypot(a.px - b.px, a.py - b.py);
+        if (dist > maxDist) continue;
+        const strength = 1 - dist / maxDist;
+        ctx.strokeStyle = rgba(CONFIG.palette.eventSilver, 0.08 + strength * 0.22);
+        ctx.lineWidth = 0.8 + strength * 1.1;
+        ctx.beginPath();
+        ctx.moveTo(a.px, a.py);
+        ctx.lineTo(b.px, b.py);
+        ctx.stroke();
+      }
+    }
+
     ctx.restore();
   }
 
@@ -1396,6 +1559,73 @@ class VisualSystem {
         continue;
       }
 
+      if (state === "telarana" && p.redRole === "core") {
+        // Núcleo denso y lentamente orbitante: la Universidad.
+        const center = this.redCenter();
+        const base = Math.min(this.width, this.height);
+        const orbitAngle = seededUnit(seed) * TAU + this.time * 0.05 * (p.lane % 2 === 0 ? 1 : -1);
+        const orbitRadius = base * (0.03 + seededUnit(seed + 5) * 0.075);
+        const tx = center.x + Math.cos(orbitAngle) * orbitRadius;
+        const ty = center.y + Math.sin(orbitAngle) * orbitRadius * 0.62;
+        p.px = lerp(p.px || tx, tx, 0.045);
+        p.py = lerp(p.py || ty, ty, 0.045);
+        continue;
+      }
+
+      if (state === "telarana" && p.redRole === "seed") {
+        // Semilla de un mini cúmulo (el mundo): se posiciona en su ancla y,
+        // en la fase final, es halada junto con su cúmulo hacia el centro.
+        const pull = this.getTelaranaPull();
+        const anchor = this.redClusterAnchor(p.redCluster, pull);
+        const base = Math.min(this.width, this.height);
+        const jitterAngle = seededUnit(seed + p.redSeedIndex * 13) * TAU + this.time * 0.3;
+        const jitterR = base * 0.014;
+        const tx = anchor.x + Math.cos(jitterAngle) * jitterR;
+        const ty = anchor.y + Math.sin(jitterAngle) * jitterR * 0.6;
+        p.px = lerp(p.px || tx, tx, 0.05);
+        p.py = lerp(p.py || ty, ty, 0.05);
+        continue;
+      }
+
+      if (state === "telarana" && p.redRole === "web") {
+        // Partícula joven: espera su turno en el centro, viaja hasta su
+        // cúmulo asignado tejiendo el hilo de la red, y una vez pegada se
+        // mueve junto con ese cúmulo (incluida la fase final de ser halada).
+        const timing = this.telaranaTiming;
+        const center = this.redCenter();
+        const pull = this.getTelaranaPull();
+        const anchor = this.redClusterAnchor(p.redCluster, pull);
+        const base = Math.min(this.width, this.height);
+        const startT = timing.formDuration + p.redDepartureIndex * timing.webStagger;
+        const arriveT = startT + timing.webTravel;
+
+        if (this.momentTime < startT) {
+          const orbitAngle = seededUnit(seed) * TAU + this.time * 0.08 * (p.lane % 2 === 0 ? 1 : -1);
+          const orbitRadius = base * (0.02 + seededUnit(seed + 9) * 0.05);
+          const tx = center.x + Math.cos(orbitAngle) * orbitRadius;
+          const ty = center.y + Math.sin(orbitAngle) * orbitRadius * 0.62;
+          p.px = lerp(p.px || tx, tx, 0.05);
+          p.py = lerp(p.py || ty, ty, 0.05);
+          p.redAttach = 0;
+        } else if (this.momentTime < arriveT) {
+          const ease = smoothstep(startT, arriveT, this.momentTime);
+          const bow = Math.sin(ease * Math.PI) * base * 0.03 * (p.redCluster % 2 === 0 ? 1 : -1);
+          const perpAngle = Math.atan2(anchor.y - center.y, anchor.x - center.x) + Math.PI / 2;
+          p.px = lerp(center.x, anchor.x, ease) + Math.cos(perpAngle) * bow;
+          p.py = lerp(center.y, anchor.y, ease) + Math.sin(perpAngle) * bow;
+          p.redAttach = ease;
+        } else {
+          const jitterAngle = seededUnit(seed + 44) * TAU + this.time * 0.4;
+          const jitterR = base * 0.02;
+          const tx = anchor.x + Math.cos(jitterAngle) * jitterR;
+          const ty = anchor.y + Math.sin(jitterAngle) * jitterR * 0.6;
+          p.px = lerp(p.px || tx, tx, 0.06);
+          p.py = lerp(p.py || ty, ty, 0.06);
+          p.redAttach = 1;
+        }
+        continue;
+      }
+
       if (state === "latent") {
         const orbit = seededUnit(seed + 2) * TAU + this.time * (0.008 + p.lane * 0.003);
         const outer = radiusBase * (2.05 + seededUnit(seed + 21) * 1.7);
@@ -1552,6 +1782,10 @@ class VisualSystem {
       this.drawIngresoConnections(ctx);
       return;
     }
+    if (state === "telarana") {
+      this.drawTelaranaWeb(ctx);
+      return;
+    }
     if (state === "duality") return;
     const isLatent = state === "latent";
     const distanceScale =
@@ -1620,6 +1854,7 @@ class VisualSystem {
     const isDuality = this.current?.state === "duality";
     const isGenesis = this.current?.state === "genesis";
     const isIngreso = this.current?.state === "ingreso";
+    const isTelarana = this.current?.state === "telarana";
 
     ctx.save();
     ctx.shadowBlur = 9;
@@ -1654,6 +1889,24 @@ class VisualSystem {
         ctx.fillStyle = rgba(color, alpha);
         ctx.beginPath();
         ctx.arc(p.px, p.py, p.size * 1.08 * sizeBoost, 0, TAU);
+        ctx.fill();
+      }
+      ctx.restore();
+      return;
+    }
+
+    if (isTelarana) {
+      for (const p of this.particles) {
+        if (!p.redRole) continue;
+        const color = p.redRole === "web" ? CONFIG.palette.eventCyan : CONFIG.palette.eventRed;
+        const attach = p.redRole === "web" ? (p.redAttach ?? 0) : 1;
+        const pulse = 0.68 + Math.sin(this.time * 1.3 + p.drift) * 0.16;
+        const alpha = Math.min(0.95, (0.4 + attach * 0.5) * alphaBoost * pulse);
+        if (alpha < 0.012) continue;
+        ctx.shadowColor = rgba(color, Math.min(1, alpha * 1.5));
+        ctx.fillStyle = rgba(color, alpha);
+        ctx.beginPath();
+        ctx.arc(p.px, p.py, p.size * (0.7 + attach * 0.5) * sizeBoost, 0, TAU);
         ctx.fill();
       }
       ctx.restore();
@@ -1720,7 +1973,12 @@ class VisualSystem {
   }
 
   drawSpiral(ctx) {
-    if (this.current?.state === "genesis" || this.current?.state === "ingreso") return;
+    if (
+      this.current?.state === "genesis" ||
+      this.current?.state === "ingreso" ||
+      this.current?.state === "telarana"
+    )
+      return;
     const cx = this.width * 0.66;
     const cy = this.height * 0.47;
     const isOpening = this.current?.state === "opening";

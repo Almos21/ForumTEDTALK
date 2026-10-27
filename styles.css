@@ -888,3 +888,80 @@ h1 {
     opacity: 0.46;
   }
 }
+
+/* =========================================================
+   Nueva identidad visual — solo para las diapositivas que ya
+   tienen su propio sistema de partículas (relevo-generacional,
+   auditorio-grados, universidad-mundo). El resto del mazo
+   conserva la tipografía y los colores originales hasta que se
+   rediseñen una por una. No toca posiciones ni tamaños de
+   imágenes/logos, solo tipografía y color del texto.
+   ========================================================= */
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Sora:wght@400;500;600&display=swap");
+
+.stage[data-moment="relevo-generacional"],
+.stage[data-moment="auditorio-grados"],
+.stage[data-moment="universidad-mundo"] {
+  --remix-display: "Space Grotesk", "Forum Inter", sans-serif;
+  --remix-body: "Sora", "Forum Inter", sans-serif;
+  --remix-a: #a78bfa;
+  --remix-b: #60a5fa;
+  --remix-c: #f9a8d4;
+}
+
+.stage[data-moment="relevo-generacional"] .eyebrow,
+.stage[data-moment="auditorio-grados"] .eyebrow,
+.stage[data-moment="universidad-mundo"] .eyebrow {
+  position: relative;
+  padding-left: 24px;
+  font-family: var(--remix-body);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--remix-b);
+}
+
+.stage[data-moment="relevo-generacional"] .eyebrow::before,
+.stage[data-moment="auditorio-grados"] .eyebrow::before,
+.stage[data-moment="universidad-mundo"] .eyebrow::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 16px;
+  height: 2px;
+  transform: translateY(-50%);
+  background: linear-gradient(90deg, var(--remix-a), var(--remix-c));
+}
+
+.stage[data-moment="relevo-generacional"] h1,
+.stage[data-moment="auditorio-grados"] h1,
+.stage[data-moment="universidad-mundo"] h1 {
+  font-family: var(--remix-display);
+  font-weight: 640;
+  letter-spacing: -0.012em;
+  background: linear-gradient(118deg, var(--ink) 14%, var(--remix-a) 48%, var(--remix-b) 70%, var(--remix-c) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.stage[data-moment="relevo-generacional"] .title-highlight,
+.stage[data-moment="auditorio-grados"] .title-highlight,
+.stage[data-moment="universidad-mundo"] .title-highlight {
+  -webkit-text-fill-color: var(--highlight-color);
+  color: var(--highlight-color);
+}
+
+.stage[data-moment="relevo-generacional"] .subtitle,
+.stage[data-moment="auditorio-grados"] .subtitle,
+.stage[data-moment="universidad-mundo"] .subtitle {
+  font-family: var(--remix-body);
+  color: rgba(199, 191, 255, 0.78);
+}
+
+.stage[data-moment="relevo-generacional"] #moment-number,
+.stage[data-moment="auditorio-grados"] #moment-number,
+.stage[data-moment="universidad-mundo"] #moment-number {
+  font-family: var(--remix-display);
+}
